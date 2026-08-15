@@ -1,0 +1,41 @@
+@use "./variables" as *;
+
+.demoContainer {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+  max-width: 800px;
+}
+
+.codeWindow, .termWindow {
+  background: var(--colors-gray-700);
+  color: var(--colors-gray-50);
+  padding: 1.5rem;
+  border-radius: 8px;
+  width: 45%;
+  height: auto;
+  overflow: hidden;
+  font-family: 'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: clamp(14px, 2.5vw, 18px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  line-height: 1.8;
+  letter-spacing: 0.5px;
+}
+
+.termWindow {
+  background: var(--colors-gray-800);
+}
+
+.codeWindow div, .termWindow div {
+  margin-bottom: 0.5rem;
+  animation: fadeIn 1s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {opacity:0; transform: translateY(10px);} 
+  to {opacity:1; transform: translateY(0);} 
+}

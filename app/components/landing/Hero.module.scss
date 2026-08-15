@@ -1,0 +1,107 @@
+.heroContainer {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  padding: var(--spacing-2xl) 2rem;
+  min-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: linear-gradient(135deg, var(--colors-primary), var(--colors-secondary), var(--colors-teal), var(--colors-pink));
+  background-size: 400% 400%;
+  animation: gradientShift 15s ease infinite;
+  color: var(--colors-white);
+  overflow: hidden;
+}
+
+.heroContainer h1 {
+  font-size: 4rem;
+  line-height: 1.1;
+}
+
+.heroContainer p {
+  font-size: 1.5rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.heroImage {
+  max-width: 100%;
+  height: auto;
+  margin: var(--spacing-4) auto;
+}
+
+.ctaWrapper {
+  margin-top: auto;
+}
+
+/* decorative blobs */
+.heroContainer::before,
+.heroContainer::after {
+  content: '';
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  opacity: 0.3;
+  filter: blur(120px);
+  animation: blobMove 25s infinite alternate;
+}
+
+.heroContainer::before {
+  top: -150px;
+  left: -150px;
+  background: radial-gradient(circle, var(--colors-pink) 0%, transparent 70%);
+}
+
+.heroContainer::after {
+  bottom: -150px;
+  right: -150px;
+  background: radial-gradient(circle, var(--colors-teal) 0%, transparent 70%);
+}
+
+@keyframes blobMove {
+  to {
+    transform: translate(40px, 40px) scale(1.1);
+  }
+}
+
+.heroContainer h1 {
+  font-size: 3rem;
+  line-height: 1.2;
+  font-weight: 800;
+}
+
+.heroContainer p {
+  margin-top: var(--spacing-md);
+  font-size: 1.125rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.ctaButton {
+  margin-top: var(--spacing-lg);
+  padding: 1.25rem 3rem;
+  border-radius: var(--border-radius-full);
+  font-weight: 700;
+  font-size: 1.25rem;
+  background: var(--bolt-elements-button-primary-background);
+  color: var(--bolt-elements-button-primary-text);
+  box-shadow: var(--bolt-elements-button-primary-shadow);
+  transition: background 0.3s ease;
+}
+
+.ctaButton:hover {
+  background: var(--bolt-elements-button-primary-backgroundHover);
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}

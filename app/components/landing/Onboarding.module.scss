@@ -1,0 +1,66 @@
+.container {
+  padding: 3rem 1.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
+  font-family: 'Inter', 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.headline {
+  font-size: clamp(36px, 6vw, 48px);
+  font-weight: 800;
+  margin-bottom: 3rem;
+  color: var(--colors-white);
+  line-height: 1.2;
+  letter-spacing: 0.5px;
+}
+
+.heroImage {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto 3rem;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  display: block;
+}
+
+.bulletList {
+  list-style: none;
+  padding: 0;
+  margin: 2rem auto;
+  max-width: 600px;
+  text-align: left;
+  font-size: clamp(18px, 3vw, 22px);
+  line-height: 1.8;
+  letter-spacing: 0.5px;
+}
+
+.bulletList li {
+  margin: 1.5rem 0;
+  color: var(--colors-white);
+  font-weight: 500;
+}
+
+.ctaButton {
+  background: linear-gradient(135deg, var(--colors-accent-400), var(--colors-accent-600));
+  color: var(--colors-white);
+  padding: 1rem 2.5rem;
+  font-size: clamp(16px, 3vw, 20px);
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-top: 3rem;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 12px rgba(167, 139, 250, 0.3);
+}
+
+.ctaButton:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(167, 139, 250, 0.5);
+}
