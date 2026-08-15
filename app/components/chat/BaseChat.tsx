@@ -287,24 +287,45 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       }
     };
 
+    const addFiles = async (files: File[]) => {
+      if (files.length === 0) {
+        return;
+      }
+
+      /*
+       * Read every file, keeping the preview data URL only for images.
+       * Non-image files get an empty preview placeholder so their index
+       * stays aligned with `uploadedFiles`.
+       */
+      const previews = await Promise.all(
+        files.map(
+          (file) =>
+            new Promise<string>((resolve) => {
+              if (!file.type.startsWith('image/')) {
+                resolve('');
+                return;
+              }
+
+              const reader = new FileReader();
+              reader.onload = (e) => resolve((e.target?.result as string) ?? '');
+              reader.onerror = () => resolve('');
+              reader.readAsDataURL(file);
+            }),
+        ),
+      );
+
+      setUploadedFiles?.([...uploadedFiles, ...files]);
+      setImageDataList?.([...imageDataList, ...previews]);
+    };
+
     const handleFileUpload = () => {
       const input = document.createElement('input');
       input.type = 'file';
-      input.accept = 'image/*';
+      input.multiple = true;
 
       input.onchange = async (e) => {
-        const file = (e.target as HTMLInputElement).files?.[0];
-
-        if (file) {
-          const reader = new FileReader();
-
-          reader.onload = (e) => {
-            const base64Image = e.target?.result as string;
-            setUploadedFiles?.([...uploadedFiles, file]);
-            setImageDataList?.([...imageDataList, base64Image]);
-          };
-          reader.readAsDataURL(file);
-        }
+        const files = Array.from((e.target as HTMLInputElement).files ?? []);
+        addFiles(files);
       };
 
       input.click();
@@ -317,25 +338,21 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
         return;
       }
 
-      for (const item of items) {
-        if (item.type.startsWith('image/')) {
-          e.preventDefault();
+      const pastedFiles: File[] = [];
 
+      for (const item of items) {
+        if (item.kind === 'file') {
           const file = item.getAsFile();
 
           if (file) {
-            const reader = new FileReader();
-
-            reader.onload = (e) => {
-              const base64Image = e.target?.result as string;
-              setUploadedFiles?.([...uploadedFiles, file]);
-              setImageDataList?.([...imageDataList, base64Image]);
-            };
-            reader.readAsDataURL(file);
+            pastedFiles.push(file);
           }
-
-          break;
         }
+      }
+
+      if (pastedFiles.length > 0) {
+        e.preventDefault();
+        addFiles(pastedFiles);
       }
     };
 

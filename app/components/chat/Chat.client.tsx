@@ -352,8 +352,13 @@ export const ChatImpl = memo(
         },
       ];
 
-      // Add image parts if any
+      // Add image parts if any. Non-image files use an empty placeholder and are
+      // sent separately via experimental_attachments, so skip them here.
       images.forEach((imageData) => {
+        if (!imageData || !imageData.startsWith('data:image/')) {
+          return;
+        }
+
         // Extract correct MIME type from the data URL
         const mimeType = imageData.split(';')[0].split(':')[1] || 'image/jpeg';
 

@@ -255,23 +255,40 @@ export const ChatBox: React.FC<ChatBoxProps> = (props) => {
             e.preventDefault();
             e.currentTarget.style.border = '1px solid var(--bolt-elements-borderColor)';
           }}
-          onDrop={(e) => {
+          onDrop={async (e) => {
             e.preventDefault();
             e.currentTarget.style.border = '1px solid var(--bolt-elements-borderColor)';
 
             const files = Array.from(e.dataTransfer.files);
-            files.forEach((file) => {
-              if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
 
-                reader.onload = (e) => {
-                  const base64Image = e.target?.result as string;
-                  props.setUploadedFiles?.([...props.uploadedFiles, file]);
-                  props.setImageDataList?.([...props.imageDataList, base64Image]);
-                };
-                reader.readAsDataURL(file);
-              }
-            });
+            if (files.length === 0) {
+              return;
+            }
+
+            /*
+             * Read every dropped file, keeping the preview data URL only for images.
+             * Non-image files get an empty preview placeholder so their index stays
+             * aligned with `uploadedFiles`.
+             */
+            const previews = await Promise.all(
+              files.map(
+                (file) =>
+                  new Promise<string>((resolve) => {
+                    if (!file.type.startsWith('image/')) {
+                      resolve('');
+                      return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = (event) => resolve((event.target?.result as string) ?? '');
+                    reader.onerror = () => resolve('');
+                    reader.readAsDataURL(file);
+                  }),
+              ),
+            );
+
+            props.setUploadedFiles?.([...props.uploadedFiles, ...files]);
+            props.setImageDataList?.([...props.imageDataList, ...previews]);
           }}
           onKeyDown={(event) => {
             // allow arrow key corner highlighting
