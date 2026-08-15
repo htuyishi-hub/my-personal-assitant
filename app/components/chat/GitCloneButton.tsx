@@ -45,13 +45,36 @@ const MAX_TOTAL_SIZE = 500 * 1024; // 500KB total limit
 interface GitCloneButtonProps {
   className?: string;
   importChat?: (description: string, messages: Message[], metadata?: IChatMetadata) => Promise<void>;
+
+  /** When provided, the dialog open state is controlled by the parent. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+
+  /** Hide the default trigger button (useful when opening the dialog from elsewhere). */
+  hideButton?: boolean;
 }
 
-export default function GitCloneButton({ importChat, className }: GitCloneButtonProps) {
+export default function GitCloneButton({
+  importChat,
+  className,
+  open,
+  onOpenChange,
+  hideButton,
+}: GitCloneButtonProps) {
   const { ready, gitClone } = useGit();
   const [loading, setLoading] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<'github' | 'gitlab' | null>(null);
+
+  // Support both controlled (via props) and uncontrolled dialog open state.
+  const isDialogOpen = open ?? internalOpen;
+  const setIsDialogOpen = (value: boolean) => {
+    if (onOpenChange) {
+      onOpenChange(value);
+    } else {
+      setInternalOpen(value);
+    }
+  };
 
   const handleClone = async (repoUrl: string) => {
     if (!ready) {
@@ -162,31 +185,33 @@ ${escapeAllAbleTags(file.content)}
 
   return (
     <>
-      <Button
-        onClick={() => {
-          setSelectedProvider(null);
-          setIsDialogOpen(true);
-        }}
-        title="Clone a repo"
-        variant="default"
-        size="lg"
-        className={classNames(
-          'gap-2 bg-bolt-elements-background-depth-1',
-          'text-bolt-elements-textPrimary',
-          'hover:bg-bolt-elements-background-depth-2',
-          'border border-bolt-elements-borderColor',
-          'h-10 px-4 py-2 min-w-[120px] justify-center',
-          'transition-all duration-200 ease-in-out',
-          className,
-        )}
-        disabled={!ready || loading}
-      >
-        Clone a repo
-        <div className="flex items-center gap-1 ml-2">
-          <Github className="w-4 h-4" />
-          <GitBranch className="w-4 h-4" />
-        </div>
-      </Button>
+      {!hideButton && (
+        <Button
+          onClick={() => {
+            setSelectedProvider(null);
+            setIsDialogOpen(true);
+          }}
+          title="Clone a repo"
+          variant="default"
+          size="lg"
+          className={classNames(
+            'gap-2 bg-bolt-elements-background-depth-1',
+            'text-bolt-elements-textPrimary',
+            'hover:bg-bolt-elements-background-depth-2',
+            'border border-bolt-elements-borderColor',
+            'h-10 px-4 py-2 min-w-[120px] justify-center',
+            'transition-all duration-200 ease-in-out',
+            className,
+          )}
+          disabled={!ready || loading}
+        >
+          Clone a repo
+          <div className="flex items-center gap-1 ml-2">
+            <Github className="w-4 h-4" />
+            <GitBranch className="w-4 h-4" />
+          </div>
+        </Button>
+      )}
 
       {/* Provider Selection Dialog */}
       {isDialogOpen && !selectedProvider && (
