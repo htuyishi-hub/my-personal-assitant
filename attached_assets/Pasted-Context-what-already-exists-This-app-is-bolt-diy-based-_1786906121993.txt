@@ -1,0 +1,59 @@
+Context / what already exists
+This app is bolt.diy-based and already has a lot of the requested machinery. Key existing pieces:
+
+Manual token connect (classic + fine-grained): GitHubAuthDialog.tsx, useGitHubConnection.ts, stores/github + stores/githubConnection.ts. Also auto-connects from VITE_GITHUB_ACCESS_TOKEN.
+Clone repo into workspace: GitCloneButton.tsx + useGit.ts (isomorphic-git in WebContainer via /api/git-proxy), with a repo-selection dialog.
+Push / deploy to GitHub: workbench.ts#pushToGitHub, GitHubDeploy.client.tsx, GitHubDeploymentDialog.tsx (octokit createTree/createCommit/updateRef), triggered from the header DeployButton.
+Folder import: ImportFolderButton.tsx + utils/folderImport.ts (turns files into a boltArtifact chat message the AI reads). Surfaced only on the empty home screen via ImportButtons.
+AI recognition: imported projects become project files/artifacts the model reads automatically. JSZip is already a dependency (used for export).
+Real gaps (what this plan builds)
+No ZIP import.
+Import Folder / Clone are only on the empty home screen — not reachable from the chat input like Vercel/Replit; folder upload is not near the file-upload button.
+Manual token dialog is basic — no live validation, no scope/type detection.
+No OAuth "Sign in with GitHub".
+No developer-friendly commit / push / sync of source (the existing "Deploy to GitHub" forces npm run build first and is framed as deploy, not source push/sync).
+Implementation
+Phase 1 — ZIP import (main gap)
+New util app/utils/zipImport.ts: read a .zip with JSZip, walk entries, apply the same shouldIncludeFile / MAX_FILES / binary-detection filters as folderImport.ts, then call createChatFromFolder(...) so the AI ingests it identically to folder import.
+New component app/components/chat/ImportZipButton.tsx (mirrors ImportFolderButton.tsx, accept=".zip").
+Wire into ImportButtons.tsx next to Import Folder.
+Phase 2 — Surface import + GitHub in the chat input area
+In ChatBox.tsx (near the existing upload/paperclip button), add an "Import" affordance (dropdown or icon buttons) exposing: Upload files, Import folder, Import ZIP, Clone from GitHub. Reuse existing components/handlers; no duplicated logic.
+Keep the existing home-screen ImportButtons + GitCloneButton, but also make them available once a chat has started via the new chat-input entry point.
+Phase 3 — Efficient manual token connect
+Upgrade GitHubAuthDialog.tsx:
+Live validate on paste (call /user), show avatar + login + granted scopes (x-oauth-scopes header) before saving.
+Auto-detect token type (ghp_/github_pat_ prefixes) instead of a manual dropdown.
+Inline scope guidance and correct "create token" deep links for classic vs fine-grained.
+Clear inline error states reusing useGitHubConnection.connect.
+Phase 4 — OAuth "Sign in with GitHub"
+New routes:
+app/routes/api.auth.github.ts — redirect to GitHub authorize URL with repo read:org read:user scope + state.
+app/routes/api.auth.github.callback.ts — exchange code for a token using the client secret (server-side), then hand the token back to the client to store via the existing connection store (same shape as manual connect).
+Add "Sign in with GitHub" button in GitHubAuthDialog.tsx and the Settings GitHub tab.
+Prerequisite (external, user action): requires a registered GitHub OAuth App. Will request env vars GITHUB_OAUTH_CLIENT_ID and GITHUB_OAUTH_CLIENT_SECRET and provide the exact callback URL to register.
+Repo scope vs. per-repo selection: OAuth grants scope-level ("whole account") access. True per-repo selection is a GitHub App installation feature (heavier: private key + install flow); for per-repo access we'll direct users to a fine-grained PAT (they pick repos on GitHub's side) via the improved manual flow. Full GitHub App can be a later phase if desired.
+Phase 5 — Developer commit / push / sync
+New hook + dialog for source push (reuse octokit tree/commit/ref logic already in GitHubDeploymentDialog, minus the forced build):
+Choose/create repo + branch, enter a commit message, push current workbench files.
+Remember repo per chat (existing github-repo-${chatId} localStorage key).
+Add "Sync" (pull latest) by re-cloning via useGit into the workspace.
+Surface as a dedicated GitHub menu in the header (HeaderActionButtons) separate from Deploy: Connect / Commit & Push / Sync / Open on GitHub.
+Phase 6 — AI recognition
+No core change needed: folder/ZIP/clone all produce project files the model reads. Verify the ZIP path emits the same boltArtifact message so Qwen2.5-Coder-32B-Instruct receives the file tree + contents like existing imports.
+Files (new)
+app/utils/zipImport.ts
+app/components/chat/ImportZipButton.tsx
+app/routes/api.auth.github.ts
+app/routes/api.auth.github.callback.ts
+app/components/github/CommitPushDialog.tsx (+ small hook)
+Files (edit)
+app/components/chat/chatExportAndImport/ImportButtons.tsx (add ZIP)
+app/components/chat/ChatBox.tsx (import/GitHub entry point in input area)
+app/components/@settings/tabs/github/components/GitHubAuthDialog.tsx (validation, scopes, OAuth button)
+app/components/@settings/tabs/github/components/GitHubConnection.tsx (OAuth button, status)
+app/components/header/HeaderActionButtons.client.tsx (GitHub menu: commit/push/sync)
+Notes / decisions
+Reuse existing filters, stores, and octokit logic — avoid duplicating auth/push code.
+OAuth requires the user to register a GitHub OAuth App and set GITHUB_OAUTH_CLIENT_ID / GITHUB_OAUTH_CLIENT_SECRET; manual token + env-var auto-connect keep working regardless.
+Binary files continue to be skipped on import (consistent with current folder import behavior).
