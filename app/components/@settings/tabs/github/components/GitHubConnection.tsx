@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Button } from '~/components/ui/Button';
 import { classNames } from '~/utils/classNames';
 import { useGitHubConnection } from '~/lib/hooks';
+import { GitHubAuthDialog } from './GitHubAuthDialog';
 
 interface ConnectionTestResult {
   status: 'success' | 'error' | 'testing';
@@ -20,6 +21,7 @@ export function GitHubConnection({ connectionTest, onTestConnection }: GitHubCon
 
   const [token, setToken] = React.useState('');
   const [tokenType, setTokenType] = React.useState<'classic' | 'fine-grained'>('classic');
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = React.useState(false);
 
   const handleConnect = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +63,21 @@ export function GitHubConnection({ connectionTest, onTestConnection }: GitHubCon
       transition={{ delay: 0.2 }}
     >
       <div className="p-6 space-y-6">
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 p-3">
+          <div>
+            <p className="text-sm font-medium text-bolt-elements-textPrimary">Use GitHub OAuth</p>
+            <p className="text-xs text-bolt-elements-textSecondary">Sign in without copying a token.</p>
+          </div>
+          <Button type="button" variant="outline" onClick={() => setIsAuthDialogOpen(true)} className="flex items-center gap-2">
+            <div className="i-ph:github-logo w-4 h-4" />
+            Sign in with GitHub
+          </Button>
+        </div>
+        <GitHubAuthDialog
+          isOpen={isAuthDialogOpen}
+          onClose={() => setIsAuthDialogOpen(false)}
+          onSuccess={() => setIsAuthDialogOpen(false)}
+        />
         {!isConnected && (
           <div className="text-xs text-bolt-elements-textSecondary bg-bolt-elements-background-depth-1 dark:bg-bolt-elements-background-depth-1 p-3 rounded-lg mb-4">
             <p className="flex items-center gap-1 mb-1">

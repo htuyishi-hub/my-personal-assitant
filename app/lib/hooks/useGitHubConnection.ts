@@ -17,6 +17,10 @@ export interface ConnectionState {
 
 export interface UseGitHubConnectionReturn extends ConnectionState {
   connect: (token: string, tokenType: 'classic' | 'fine-grained') => Promise<void>;
+  validateToken: (
+    token: string,
+    tokenType: 'classic' | 'fine-grained',
+  ) => Promise<{ user: GitHubUserResponse; scopes: string[]; tokenType: 'classic' | 'fine-grained' }>;
   disconnect: () => void;
   refreshConnection: () => Promise<void>;
   testConnection: () => Promise<boolean>;
@@ -130,12 +134,17 @@ export function useGitHubConnection(): UseGitHubConnectionReturn {
       }
 
       const userData = (await response.json()) as GitHubUserResponse;
+      const scopes = (response.headers.get('x-oauth-scopes') || '')
+        .split(',')
+        .map((scope) => scope.trim())
+        .filter(Boolean);
 
       // Create connection object
       const connectionData: GitHubConnection = {
         user: userData,
         token,
         tokenType,
+        scopes,
       };
 
       // Set cookies for API requests
@@ -165,6 +174,35 @@ export function useGitHubConnection(): UseGitHubConnectionReturn {
       isConnecting.set(false);
     }
   }, []);
+
+  const validateToken = useCallback(
+    async (token: string, tokenType: 'classic' | 'fine-grained') => {
+      if (!token.trim()) {
+        throw new Error('Token is required');
+      }
+
+      const response = await fetch('https://api.github.com/user', {
+        headers: {
+          Accept: 'application/vnd.github.v3+json',
+          Authorization: `${tokenType === 'classic' ? 'token' : 'Bearer'} ${token.trim()}`,
+          'User-Agent': 'AllAble.diy',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Authentication failed: ${response.status} ${response.statusText}`);
+      }
+
+      const userData = (await response.json()) as GitHubUserResponse;
+      const scopes = (response.headers.get('x-oauth-scopes') || '')
+        .split(',')
+        .map((scope) => scope.trim())
+        .filter(Boolean);
+
+      return { user: userData, scopes, tokenType };
+    },
+    [],
+  );
 
   const disconnect = useCallback(() => {
     // Clear localStorage
@@ -243,6 +281,7 @@ export function useGitHubConnection(): UseGitHubConnectionReturn {
     error,
     isServerSide: !connection?.token, // Server-side if no token
     connect,
+    validateToken,
     disconnect,
     refreshConnection,
     testConnection,

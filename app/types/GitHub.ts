@@ -144,6 +144,7 @@ export interface GitHubConnection {
   user: GitHubUserResponse | null;
   token: string;
   tokenType: 'classic' | 'fine-grained';
+  scopes?: string[];
   stats?: GitHubStats;
   rateLimit?: GitHubRateLimits;
 }

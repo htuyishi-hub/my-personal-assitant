@@ -1,4 +1,5 @@
 import React from 'react';
+import type { Message } from 'ai';
 import { ClientOnly } from 'remix-utils/client-only';
 import { classNames } from '~/utils/classNames';
 import { PROVIDER_LIST } from '~/utils/constants';
@@ -20,6 +21,9 @@ import { ColorSchemeDialog } from '~/components/ui/ColorSchemeDialog';
 import type { DesignScheme } from '~/types/design-scheme';
 import type { ElementInfo } from '~/components/workbench/Inspector';
 import { McpTools } from './MCPTools';
+import { ImportFolderButton } from './ImportFolderButton';
+import { ImportZipButton } from './ImportZipButton';
+import GitCloneButton from './GitCloneButton';
 
 interface ChatBoxProps {
   isModelSettingsCollapsed: boolean;
@@ -62,10 +66,12 @@ interface ChatBoxProps {
   setDesignScheme?: (scheme: DesignScheme) => void;
   selectedElement?: ElementInfo | null;
   setSelectedElement?: ((element: ElementInfo | null) => void) | undefined;
+  importChat?: (description: string, messages: Message[]) => Promise<void>;
 }
 
 export const ChatBox: React.FC<ChatBoxProps> = (props) => {
   const [activeCorner, setActiveCorner] = React.useState<string | null>(null);
+  const [isImportMenuOpen, setIsImportMenuOpen] = React.useState(false);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     switch (e.key) {
@@ -332,6 +338,35 @@ export const ChatBox: React.FC<ChatBoxProps> = (props) => {
             <IconButton title="Upload file" className="transition-all" onClick={() => props.handleFileUpload()}>
               <div className="i-ph:paperclip text-xl"></div>
             </IconButton>
+            <div className="relative">
+              <IconButton
+                title="Import project"
+                className={classNames('transition-all', isImportMenuOpen && '!bg-bolt-elements-item-backgroundAccent')}
+                onClick={() => setIsImportMenuOpen((open) => !open)}
+              >
+                <div className="i-ph:folder-notch-open text-xl" />
+              </IconButton>
+              {isImportMenuOpen && (
+                <div className="absolute bottom-11 left-0 z-30 min-w-[190px] rounded-lg border border-bolt-elements-borderColor bg-bolt-elements-background-depth-1 p-2 shadow-xl">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsImportMenuOpen(false);
+                      props.handleFileUpload();
+                    }}
+                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-bolt-elements-textPrimary hover:bg-bolt-elements-background-depth-2"
+                  >
+                    <span className="i-ph:paperclip w-4 h-4" />
+                    Upload files
+                  </button>
+                  <div className="px-1 pt-1 [&_button]:!min-w-0 [&_button]:!h-9 [&_button]:!w-full [&_button]:!justify-start [&_button]:!border-0 [&_button]:!bg-transparent [&_button]:!px-2 [&_button]:!text-sm [&_button]:!shadow-none [&_button:hover]:!bg-bolt-elements-background-depth-2">
+                    <ImportFolderButton importChat={props.importChat} className="!text-bolt-elements-textPrimary" />
+                    <ImportZipButton importChat={props.importChat} className="!text-bolt-elements-textPrimary" />
+                    <GitCloneButton importChat={props.importChat} className="!text-bolt-elements-textPrimary" />
+                  </div>
+                </div>
+              )}
+            </div>
             <IconButton
               title="Enhance prompt"
               disabled={props.input.length === 0 || props.enhancingPrompt}

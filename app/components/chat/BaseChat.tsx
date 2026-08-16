@@ -475,6 +475,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   setDesignScheme={setDesignScheme}
                   selectedElement={selectedElement}
                   setSelectedElement={setSelectedElement}
+                  importChat={importChat}
                 />
               </div>
             </StickToBottom>

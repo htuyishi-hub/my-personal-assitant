@@ -813,19 +813,51 @@ export class WorkbenchStore {
             const repoRefresh = await octokit.repos.get({ owner, repo: repoName });
             repo = repoRefresh.data;
 
-            // Get the latest commit SHA (assuming main branch, update dynamically if needed)
+            const targetBranch = branchName || repo.default_branch || 'main';
+
+            // Create the requested branch from the default branch when it does not exist.
+            try {
+              await octokit.git.getRef({
+                owner: repo.owner.login,
+                repo: repo.name,
+                ref: `heads/${targetBranch}`,
+              });
+            } catch (branchError) {
+              if (targetBranch !== repo.default_branch) {
+                const { data: defaultRef } = await octokit.git.getRef({
+                  owner: repo.owner.login,
+                  repo: repo.name,
+                  ref: `heads/${repo.default_branch || 'main'}`,
+                });
+                await octokit.git.createRef({
+                  owner: repo.owner.login,
+                  repo: repo.name,
+                  ref: `refs/heads/${targetBranch}`,
+                  sha: defaultRef.object.sha,
+                });
+              } else {
+                throw branchError;
+              }
+            }
+
+            // Get the latest commit SHA for the requested branch.
             const { data: ref } = await octokit.git.getRef({
               owner: repo.owner.login,
               repo: repo.name,
-              ref: `heads/${repo.default_branch || 'main'}`, // Handle dynamic branch
+              ref: `heads/${targetBranch}`,
             });
             const latestCommitSha = ref.object.sha;
+            const { data: latestCommit } = await octokit.git.getCommit({
+              owner: repo.owner.login,
+              repo: repo.name,
+              commit_sha: latestCommitSha,
+            });
 
             // Create a new tree
             const { data: newTree } = await octokit.git.createTree({
               owner: repo.owner.login,
               repo: repo.name,
-              base_tree: latestCommitSha,
+              base_tree: latestCommit.tree.sha,
               tree: validBlobs.map((blob) => ({
                 path: blob!.path,
                 mode: '100644',
@@ -847,7 +879,7 @@ export class WorkbenchStore {
             await octokit.git.updateRef({
               owner: repo.owner.login,
               repo: repo.name,
-              ref: `heads/${repo.default_branch || 'main'}`, // Handle dynamic branch
+              ref: `heads/${targetBranch}`,
               sha: newCommit.sha,
             });
 
